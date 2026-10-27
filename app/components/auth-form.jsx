@@ -39,8 +39,15 @@ export default function AuthForm({ mode }) {
     setBusy(true);
     setMessage('');
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` } });
-      if (error) setMessage(error.message);
+      const redirectTo = new URL('/auth/callback', window.location.origin);
+      redirectTo.searchParams.set('next', safeNext);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectTo.toString(), skipBrowserRedirect: true },
+      });
+      if (error) return setMessage(error.message);
+      if (!data?.url) return setMessage('Supabase did not return a Google sign-in URL. Check that Google is enabled in Supabase Auth.');
+      window.location.assign(data.url);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Google sign-in could not reach Supabase. Check the deployed environment variables.');
     } finally {
