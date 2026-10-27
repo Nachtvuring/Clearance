@@ -10,10 +10,11 @@ export default function LessonProgressControl({ lessonId, initialStatus = 'not_s
   if (!lessonId) return <span className="progress-setup-needed">Progress setup pending</span>;
   function save(nextStatus) {
     setMessage('');
+    const previousStatus = status;
+    setStatus(nextStatus);
     startTransition(async () => {
       const result = await saveLessonProgress(lessonId, nextStatus);
-      if (result?.error) setMessage(result.error);
-      else setStatus(nextStatus);
+      if (result?.error) { setStatus(previousStatus); setMessage(result.error); }
     });
   }
   return <div className="lesson-progress-control">

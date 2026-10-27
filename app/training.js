@@ -1,4 +1,5 @@
 let initialized = false;
+const audioCache = new Map();
 
 export function initializeTraining() {
   if (initialized) return;
@@ -133,6 +134,19 @@ export function initializeTraining() {
   function speak(text, sourceButton = document.querySelector('#play-audio, #lesson-audio')) {
     const button = sourceButton;
     if (button) button.disabled = true;
+    const notice = document.querySelector('#training-notice');
+    const cachedUrl = audioCache.get(text);
+    if (cachedUrl) {
+      const cachedAudio = new Audio(cachedUrl);
+      cachedAudio.play().catch((error) => showAudioError(error));
+      if (button) button.disabled = false;
+      return;
+    }
+    if (notice) {
+      notice.textContent = 'Generating voice audio…';
+      notice.classList.add('visible');
+      notice.classList.add('loading');
+    }
     fetch('/api/elevenlabs/speech', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -145,23 +159,35 @@ export function initializeTraining() {
       return response.blob();
     }).then((blob) => {
       const audioUrl = URL.createObjectURL(blob);
+      audioCache.set(text, audioUrl);
+      if (audioCache.size > 60) {
+        const oldestText = audioCache.keys().next().value;
+        URL.revokeObjectURL(audioCache.get(oldestText));
+        audioCache.delete(oldestText);
+      }
       const audio = new Audio(audioUrl);
-      audio.onended = () => URL.revokeObjectURL(audioUrl);
-      audio.onerror = () => URL.revokeObjectURL(audioUrl);
+      if (notice) notice.classList.remove('visible');
       return audio.play();
     }).catch((error) => {
-      const feedback = document.querySelector('#feedback');
-      if (feedback) feedback.textContent = error.message;
-      else {
-        const notice = document.querySelector('#training-notice');
-        if (notice) {
-          notice.textContent = error.message;
-          notice.classList.add('visible');
-          clearTimeout(window.clearanceNoticeTimer);
-          window.clearanceNoticeTimer = setTimeout(() => notice.classList.remove('visible'), 6000);
-        }
-      }
-    }).finally(() => { if (button) button.disabled = false; });
+      showAudioError(error);
+    }).finally(() => {
+      if (button) button.disabled = false;
+      if (notice) notice.classList.remove('loading');
+    });
+  }
+
+  function showAudioError(error) {
+    const message = error?.message || 'Audio could not be generated. Check the deployment voice settings.';
+    const feedback = document.querySelector('#feedback');
+    const notice = document.querySelector('#training-notice');
+    if (feedback) feedback.textContent = message;
+    if (notice) {
+      notice.textContent = message;
+      notice.classList.add('visible');
+      notice.classList.remove('loading');
+      clearTimeout(window.clearanceNoticeTimer);
+      window.clearanceNoticeTimer = setTimeout(() => notice.classList.remove('visible'), 7000);
+    }
   }
 
   document.addEventListener('click', (event) => {

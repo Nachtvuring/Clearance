@@ -21,7 +21,6 @@ export default function AuthForm({ mode }) {
     event.preventDefault(); setMessage('');
     if (!supabase) return setMessage('Add your Supabase URL and publishable key to .env.local to enable accounts.');
     setBusy(true);
-    setBusy(true);
     try {
       const result = mode === 'signup'
         ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` } })
