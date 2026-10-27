@@ -152,6 +152,15 @@ export function initializeTraining() {
     }).catch((error) => {
       const feedback = document.querySelector('#feedback');
       if (feedback) feedback.textContent = error.message;
+      else {
+        const notice = document.querySelector('#training-notice');
+        if (notice) {
+          notice.textContent = error.message;
+          notice.classList.add('visible');
+          clearTimeout(window.clearanceNoticeTimer);
+          window.clearanceNoticeTimer = setTimeout(() => notice.classList.remove('visible'), 6000);
+        }
+      }
     }).finally(() => { if (button) button.disabled = false; });
   }
 

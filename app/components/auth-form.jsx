@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
@@ -12,23 +12,41 @@ export default function AuthForm({ mode }) {
   const supabase = createClient();
   const next = searchParams.get('next');
   const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+  useEffect(() => {
+    if (searchParams.get('error') === 'oauth') {
+      setMessage('Google sign-in did not complete. Check that this site’s /auth/callback URL is allowed in Supabase, and that Google Cloud uses the callback URL shown in Supabase’s Google provider settings.');
+    }
+  }, [searchParams]);
   async function submit(event) {
     event.preventDefault(); setMessage('');
     if (!supabase) return setMessage('Add your Supabase URL and publishable key to .env.local to enable accounts.');
     setBusy(true);
-    const result = mode === 'signup'
-      ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` } })
-      : await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (result.error) return setMessage(result.error.message);
-    if (mode === 'signup' && !result.data.session) return setMessage('Check your inbox to confirm your email, then log in.');
-    window.location.assign(safeNext);
+    setBusy(true);
+    try {
+      const result = mode === 'signup'
+        ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` } })
+        : await supabase.auth.signInWithPassword({ email, password });
+      if (result.error) return setMessage(result.error.message);
+      if (mode === 'signup' && !result.data.session) return setMessage('Check your inbox to confirm your email, then log in.');
+      window.location.assign(safeNext);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Sign-in could not reach Supabase. Check the deployed environment variables.');
+    } finally {
+      setBusy(false);
+    }
   }
   async function googleLogin() {
     if (!supabase) return setMessage('Add your Supabase URL and publishable key to .env.local to enable accounts.');
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` } });
-    if (error) { setBusy(false); setMessage(error.message); }
+    setMessage('');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` } });
+      if (error) setMessage(error.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Google sign-in could not reach Supabase. Check the deployed environment variables.');
+    } finally {
+      setBusy(false);
+    }
   }
   return <section className="auth-card"><div className="eyebrow">PILOT TRAINING ACCOUNT</div><h1>{mode === 'signup' ? 'Start your training.' : 'Welcome back.'}</h1><p>{mode === 'signup' ? 'Create an account to follow your course and save your progress.' : 'Log in to continue your ATC training.'}</p>
     <button type="button" className="google-button" onClick={googleLogin} disabled={busy}><span className="google-g">G</span> Continue with Google</button><div className="auth-divider"><span>or use email</span></div>

@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export async function POST(request) {
   const client = getElevenLabsClient();
   if (!client) {
-    return NextResponse.json({ error: 'Set ELEVENLABS_API_KEY in .env.local to enable ATC audio.' }, { status: 503 });
+    return NextResponse.json({ error: 'Set ELEVENLABS_API_KEY in the deployment environment to enable ATC audio.' }, { status: 503 });
   }
 
   let text;

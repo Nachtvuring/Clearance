@@ -5,6 +5,9 @@ export async function GET(request) {
   const code = searchParams.get('code');
   const next = searchParams.get('next');
   const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+  if (searchParams.has('error') || searchParams.has('error_description')) {
+    return NextResponse.redirect(`${origin}/login?error=oauth`);
+  }
   if (code) {
     const supabase = await createClient();
     if (supabase) {
@@ -12,5 +15,5 @@ export async function GET(request) {
       if (!error) return NextResponse.redirect(`${origin}${safeNext}`);
     }
   }
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  return NextResponse.redirect(`${origin}/login?error=oauth`);
 }

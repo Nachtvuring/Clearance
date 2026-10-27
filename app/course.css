@@ -20,3 +20,4 @@
 .doc-section>.doc-callout{margin-top:18px}
 @media(max-width:850px){.course-index-link{min-width:150px;flex:0 0 auto}.doc-section-top{align-items:flex-start}.doc-section-top>.lesson-progress-control{margin-top:4px}}
 @media(max-width:560px){.doc-section-top{flex-direction:column;gap:8px}.doc-section-top>.lesson-progress-control{margin:0}.course-index-link{min-width:145px}.chapter-intro{font-size:11px!important}}
+.training-notice{position:fixed;z-index:120;right:20px;bottom:20px;max-width:min(430px,calc(100vw - 40px));padding:12px 15px;border:1px solid #765c3d;border-radius:6px;background:#282117;color:#f1d9ac;font-size:11px;line-height:1.55;box-shadow:0 12px 40px #0007;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .18s ease,transform .18s ease,visibility .18s}.training-notice.visible{opacity:1;visibility:visible;transform:translateY(0)}
