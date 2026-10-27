@@ -1,6 +1,7 @@
 import './globals.css';
 import './landing.css';
 import './course.css';
+import './responsive.css';
 import AppShell from './components/app-shell';
 
 export const metadata = {
